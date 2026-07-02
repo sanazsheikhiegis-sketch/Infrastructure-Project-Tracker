@@ -484,7 +484,6 @@ const CTEXT={
 // INIT
 // ══════════════════════════════════════════
 function init(){
-  Chart.register(refLine, donutCenter);
   fillDropdowns();
   applyFilters();
   document.addEventListener('click', ieOutside);
@@ -735,6 +734,8 @@ const donutCenter={
 function dk(k){if(charts[k]){charts[k].destroy();charts[k]=null;}}
 
 function renderAllCharts(){
+  if(typeof Chart==='undefined') return;
+  try{ Chart.register(refLine, donutCenter); }catch(e){}
   renderMainChart(); renderDeadlineChart(); renderStatusChart();
 }
 
@@ -1151,7 +1152,7 @@ async function loadData(){
   const loading=document.getElementById('loading-overlay');
   loading.style.display='flex';
   try{
-    const res=await fetch(SHEET_CSV_URL+'&t='+Date.now());
+    const res=await fetch(SHEET_CSV_URL);
     if(!res.ok) throw new Error('Network error');
     const text=await res.text();
     const lines=text.trim().split('\n').filter(l=>l.trim());
