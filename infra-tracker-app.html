@@ -1137,6 +1137,27 @@ function toast(msg){
 // ══════════════════════════════════════════
 // CSV LOADER — Google Sheets live data
 // ══════════════════════════════════════════
+function normalizeDate(d){
+  if(!d) return '';
+  d=d.trim().replace(/^"|"$/g,'');
+  if(!d) return '';
+  // Already YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+  // DD/MM/YYYY or M/D/YYYY or D/M/YYYY
+  if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)){
+    const parts=d.split('/');
+    // Detect MM/DD/YYYY vs DD/MM/YYYY: if first part >12, it's day
+    const a=parseInt(parts[0]),b=parseInt(parts[1]),yr=parts[2];
+    if(a>12) return `${yr}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+    // Assume DD/MM/YYYY (European/UK)
+    return `${yr}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+  }
+  // Try generic parse as fallback
+  const p=new Date(d);
+  if(!isNaN(p)) return p.toISOString().split('T')[0];
+  return '';
+}
+
 function parseCSVLine(line){
   const result=[]; let cur=''; let inQ=false;
   for(let i=0;i<line.length;i++){
@@ -1176,8 +1197,8 @@ async function loadData(){
         code:(v[0]||'').replace(/^"|"$/g,''),
         name:(v[1]||'').replace(/^"|"$/g,''),
         team:(v[2]||'').replace(/^"|"$/g,''),
-        date:(v[3]||'').replace(/^"|"$/g,''),
-        submit:(v[4]||'').replace(/^"|"$/g,''),
+        date:normalizeDate(v[3]||''),
+        submit:normalizeDate(v[4]||''),
         status:(v[5]||'').replace(/^"|"$/g,''),
         stage:(v[6]||'').replace(/^"|"$/g,''),
       };
