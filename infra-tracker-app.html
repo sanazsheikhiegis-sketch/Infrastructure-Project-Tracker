@@ -789,7 +789,7 @@ function renderMainChart(){
   if(mode==='team'){
     const TO=['BD 01','BD 02','BD 03','BD 04','BD 05','-N/A'];
     const teams=TO.filter(t=>P.some(p=>p.team===t));
-    const supportFiltered = activeSupportFilter === 'all' ? filtered : filtered.filter(p=>p.support===activeSupportFilter);
+    const supportFiltered = activeSupportFilter === 'all' ? filtered : filtered.filter(p=>p.support && p.support.trim()===activeSupportFilter);
     currentSupportFiltered = supportFiltered;
     const stages=[...new Set(supportFiltered.map(p=>p.stage).filter(Boolean))].sort();
     const refVal=6;
@@ -797,7 +797,7 @@ function renderMainChart(){
       type:'bar',
       data:{labels:teams.map(t=>t==='-N/A'?'No BIM Team':t),datasets:stages.map(s=>({
         label:s,
-        data:teams.map(t=>filtered.filter(p=>p.team===t&&p.stage===s).length),
+        data:teams.map(t=>supportFiltered.filter(p=>p.team===t&&p.stage===s).length),
         backgroundColor:hiddenStages.has(s)?'transparent':(SCOL[s]||'#CBD5E0'),
         borderWidth:0,
         borderRadius:2,
