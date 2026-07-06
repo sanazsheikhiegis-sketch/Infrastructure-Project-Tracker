@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Infra Team Project Tracker</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+<script>if(!window.Chart){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"><\/script>');}</script>
+<style>
+:root{
+  --bg:#f5f5f3;--surface:#fff;--border:#e8e8e6;--border-light:#f0f0ef;
+  --text:#1a1a1a;--muted:#a0a09e;--sec:#6b6b69;--accent:#2563eb;
+  --r:10px;--sh:0 1px 4px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+
+/* ── HEADER ── */
+.hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:13px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300}
+.hdr h1{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.hdr p{font-size:11px;color:var(--muted);margin-top:2px}
+.hdr-r{display:flex;gap:7px}
+
+/* ── TOOLBAR ── */
+.toolbar{background:var(--surface);border-bottom:1px solid var(--border);padding:7px 22px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:sticky;top:58px;z-index:200}
+.tab-grp{display:flex;background:#f0f0ef;border-radius:7px;padding:2px;gap:1px}
+.tbtx{padding:5px 11px;font-size:12px;font-weight:500;border:none;background:transparent;color:var(--sec);cursor:pointer;border-radius:5px;transition:.15s;white-space:nowrap}
+.tbtx:hover{background:#e4e4e2;color:var(--text)}
+.tbtx.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.sep{width:1px;background:var(--border);align-self:stretch;margin:0 3px}
+.chips{display:flex;gap:5px;flex-wrap:wrap;align-items:center;flex:1}
+.chip{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.chip .cx{cursor:pointer;margin-left:1px;opacity:.6}.chip .cx:hover{opacity:1}
+.fhint{font-size:11px;color:var(--muted);font-style:italic}
+
+/* ── FILTERS ── */
+.frow{padding:8px 22px;display:flex;gap:7px;flex-wrap:wrap;align-items:center;background:var(--surface);border-bottom:1px solid var(--border)}
+.fi{padding:5px 9px;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text);background:var(--surface);outline:none}
+.fi:focus{border-color:#93c5fd}
+.btn-clr{padding:4px 9px;border:1px solid var(--border);border-radius:6px;font-size:11px;color:var(--sec);background:var(--surface);cursor:pointer}
+.btn-clr:hover{background:var(--bg)}
+
+/* ── STATS ── */
+.stats{display:flex;gap:9px;padding:14px 22px 0;flex-wrap:wrap}
+.sc{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:11px 16px;flex:1;min-width:95px;cursor:pointer;transition:.15s;box-shadow:var(--sh)}
+.sc:hover{border-color:#93c5fd;transform:translateY(-1px)}
+.sc.act{border-color:var(--accent);background:#eff6ff}
+.sc-v{font-size:24px;font-weight:700;line-height:1}.sc-l{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── MAIN ── */
+.main{padding:13px 22px 24px}
+.split{display:grid;grid-template-columns:1fr 400px;gap:14px;align-items:start}
+@media(max-width:1080px){.split{grid-template-columns:1fr}}
+
+/* ── TABLE ── */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+.tbl-top{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.tbl-ttl{font-size:13px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+thead{background:#f8f8f6;border-bottom:1px solid var(--border)}
+th{text-align:left;padding:8px 11px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;user-select:none;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase}
+th:hover{background:#f0f0ef}th.sorted{color:var(--text)}
+td{padding:8px 11px;border-bottom:1px solid var(--border-light);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf9}
+/* Editable cells */
+td.editable{cursor:pointer;position:relative}
+td.editable:hover::after{content:'✎';position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);opacity:.7}
+.code-c{font-family:'SF Mono',monospace;font-size:11.5px;color:var(--sec)}
+.tbl-ft{padding:7px 14px;font-size:11px;color:var(--muted);background:#f8f8f6;border-top:1px solid var(--border-light)}
+.date-od{color:#dc2626;font-weight:600}.date-sn{color:#d97706;font-weight:500}
+
+/* ── INLINE EDITOR ── */
+.ie-wrap{position:fixed;z-index:9999;background:var(--surface);border:1.5px solid var(--accent);border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.15);padding:4px;min-width:160px;display:none}
+.ie-wrap.show{display:block}
+.ie-wrap input,.ie-wrap select{width:100%;padding:6px 9px;border:none;border-radius:5px;font-size:13px;color:var(--text);background:transparent;outline:none}
+.ie-hint{font-size:10px;color:var(--muted);padding:2px 9px 5px;display:flex;justify-content:space-between}
+.ie-hint span{cursor:pointer;color:var(--accent)}.ie-hint span:hover{text-decoration:underline}
+
+/* ── BADGES ── */
+.badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:11.5px;font-weight:500;white-space:nowrap}
+.t-NA{background:#f0f0ef;color:#787774}.t-BD01{background:#dbeafe;color:#1e40af}
+.t-BD02{background:#fce7f3;color:#9d174d}.t-BD03{background:#fef3c7;color:#78350f}
+.t-BD04{background:#dcfce7;color:#14532d}.t-BD05{background:#ede9fe;color:#4c1d95}
+.s-In-progress{background:#fff7ed;color:#9a3412}.s-Completed{background:#f0fdf4;color:#14532d}
+.s-On-Hold{background:#fef2f2;color:#991b1b}.s-Not-Started{background:#f8f8f6;color:#6b6b69}
+.g-IFC{background:#dbeafe;color:#1e40af}.g-VO{background:#fef3c7;color:#78350f}
+.g-TD{background:#fee2e2;color:#991b1b}.g-TIS{background:#ede9fe;color:#4c1d95}
+.g-PCD{background:#fce7f3;color:#9d174d}.g-Completed{background:#f0fdf4;color:#14532d}
+.g-On-Hold{background:#fef2f2;color:#991b1b}.g-Not-Started{background:#f8f8f6;color:#6b6b69}
+.g-Peer-Review{background:#fff7ed;color:#9a3412}.g-100SD{background:#dcfce7;color:#14532d}
+.g-100CD{background:#cffafe;color:#164e63}.g-100DD{background:#fef9c3;color:#713f12}
+.g-100CMP{background:#ede9fe;color:#4c1d95}.g-50SD{background:#bbf7d0;color:#14532d}
+.g-50CD{background:#a5f3fc;color:#164e63}.g-50DD{background:#fde68a;color:#713f12}
+.g-50CMP{background:#ddd6fe;color:#4c1d95}.g-50DMP{background:#fbcfe8;color:#9d174d}
+.g-100DMP{background:#fce7f3;color:#9d174d}
+
+/* ── CHART PANEL ── */
+.cpanel{display:flex;flex-direction:column;gap:12px}
+.cc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:15px;box-shadow:var(--sh)}
+.cc-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cc-ttl{font-size:12px;font-weight:700;color:var(--text)}
+.cc-hint{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:2px}
+.cc-hint::before{content:'👆';font-size:10px}
+.cbox{position:relative}
+.clegend{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.li{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--sec);cursor:pointer;padding:2px 5px;border-radius:4px;transition:.1s}
+.li:hover{background:var(--bg);color:var(--text)}
+.ld{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+select.csb{font-size:11px;padding:3px 7px;border:1px solid var(--border);border-radius:5px;background:var(--surface);color:var(--text);cursor:pointer;outline:none}
+
+/* ── CALENDAR ── */
+#cal-view{display:none;padding:0}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 22px 10px;background:var(--surface);border-bottom:1px solid var(--border)}
+.cal-nav h2{font-size:16px;font-weight:700}
+.cal-nav-btns{display:flex;gap:6px}
+.cal-nav-btns button{padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);font-size:12px;cursor:pointer;font-weight:500}
+.cal-nav-btns button:hover{background:var(--bg)}
+.cal-grid-wrap{padding:14px 22px}
+.cal-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh)}
+.cal-dow{display:grid;grid-template-columns:repeat(7,1fr);background:#f8f8f6;border-bottom:1px solid var(--border)}
+.cal-dow div{padding:8px 0;text-align:center;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.cal-days{display:grid;grid-template-columns:repeat(7,1fr)}
+.cal-day{border-right:1px solid var(--border-light);border-bottom:1px solid var(--border-light);min-height:90px;padding:6px;position:relative;background:var(--surface)}
+.cal-day:nth-child(7n){border-right:none}
+.cal-day.other-month{background:#fbfbf9}
+.cal-day.today{background:#eff6ff}
+.cal-day-num{font-size:12px;font-weight:600;color:var(--sec);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.cal-day.today .cal-day-num .dn{background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.cal-proj{font-size:10px;font-weight:500;padding:2px 5px;border-radius:4px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.cal-proj:hover{opacity:.8}
+.cal-more{font-size:10px;color:var(--muted);cursor:pointer;margin-top:1px}
+.cal-more:hover{color:var(--accent)}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:12px;width:100%;max-width:500px;box-shadow:0 24px 80px rgba(0,0,0,.2);max-height:90vh;overflow-y:auto}
+.mhdr{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mhdr h2{font-size:15px;font-weight:700}
+.mcl{width:28px;height:28px;border-radius:6px;border:none;background:transparent;cursor:pointer;font-size:15px;color:var(--sec);display:flex;align-items:center;justify-content:center}
+.mcl:hover{background:var(--bg)}
+.mbody{padding:18px 20px;display:flex;flex-direction:column;gap:12px}
+.mft{padding:10px 20px 18px;display:flex;gap:8px;justify-content:flex-end}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:11px;font-weight:600;color:var(--sec);letter-spacing:.03em;text-transform:uppercase}
+.fg input,.fg select{width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;color:var(--text);background:var(--surface);transition:.15s}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--accent)}
+
+/* ── BUTTONS ── */
+.btn{padding:7px 14px;border-radius:7px;font-size:12px;cursor:pointer;border:none;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{opacity:.87;transform:translateY(-1px)}
+.btn-p{background:var(--text);color:#fff}
+.btn-s{background:var(--surface);color:var(--text);border:1.5px solid var(--border)}
+.btn-sm{padding:3px 8px;font-size:11px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:8px 18px;border-radius:9px;font-size:12px;z-index:9999;opacity:0;transition:opacity .2s;pointer-events:none;display:flex;align-items:center;gap:6px}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- INLINE EDITOR -->
+<div class="ie-wrap" id="ie-wrap">
+  <input  id="ie-text"   type="text"   onkeydown="ieKey(event)">
+  <input  id="ie-date"   type="date"   onchange="ieSave()" style="display:none">
+  <select id="ie-select" onchange="ieSave()" style="display:none"></select>
+  <div class="ie-hint"><span>↵ Save  ·  Esc Cancel</span><span onclick="ieDelete()">🗑 Delete row</span></div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay" style="display:none;position:fixed;inset:0;background:rgba(245,245,243,.85);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+  <div style="width:32px;height:32px;border:3px solid #e8e8e6;border-top-color:#2563eb;border-radius:50%;animation:spin .7s linear infinite"></div>
+  <div style="font-size:13px;color:#6b6b69;font-weight:500">Loading from Google Sheets…</div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div>
+    <h1>📐 Infra Team Project Tracker</h1>
+    <p id="hdr-sub">53 projects · July 1 2026</p>
+  </div>
+  <div class="hdr-r">
+    <button class="btn btn-s" onclick="clearAllFilters()">Clear filters</button>
+    <button class="btn btn-s" onclick="loadData()" title="Reload data from Google Sheets">↻ Refresh</button>
+    <button class="btn btn-p" onclick="openModal(null)">+ New Project</button>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="tab-grp">
+    <button class="tbtx active" id="tab-split"    onclick="switchView('split')">⊞ Split</button>
+    <button class="tbtx"        id="tab-table"    onclick="switchView('table')">☰ Table</button>
+    <button class="tbtx"        id="tab-charts"   onclick="switchView('charts')">◫ Charts</button>
+    <button class="tbtx"        id="tab-calendar" onclick="switchView('calendar')">📅 Calendar</button>
+  </div>
+  <div class="sep"></div>
+  <div class="chips" id="chips">
+    <span class="fhint" id="fhint">No active filters — click a stat card or chart to filter</span>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="frow">
+  <input class="fi" type="text" id="search" placeholder="🔍  Search project…" oninput="applyFilters()" style="width:170px">
+  <select class="fi" id="f-team"   onchange="applyFilters()"><option value="">All Teams</option></select>
+  <select class="fi" id="f-status" onchange="applyFilters()"><option value="">All Statuses</option></select>
+  <select class="fi" id="f-stage"  onchange="applyFilters()"><option value="">All Stages</option></select>
+  <button class="btn-clr" onclick="clearAllFilters()">✕</button>
+</div>
+
+<!-- STATS -->
+<div class="stats" id="stats"></div>
+
+<!-- MAIN SPLIT VIEW -->
+<div class="main" id="main-wrap">
+  <div class="split" id="view-split">
+
+    <!-- TABLE -->
+    <div>
+      <div class="tbl-wrap">
+        <div class="tbl-top">
+          <span class="tbl-ttl" id="tbl-cnt">— projects</span>
+          <span style="font-size:11px;color:var(--muted)">Click any cell to edit</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th onclick="sortBy('code')"   id="th-code">   Project Code <span id="sa-code">↕</span></th>
+            <th onclick="sortBy('name')"   id="th-name">   Project Name <span id="sa-name">↕</span></th>
+            <th onclick="sortBy('team')"   id="th-team">   BIM Team <span id="sa-team">↕</span></th>
+            <th onclick="sortBy('date')"   id="th-date">   Project End Date <span id="sa-date">↕</span></th>
+            <th onclick="sortBy('submit')" id="th-submit"> Submission Date <span id="sa-submit">↕</span></th>
+            <th onclick="sortBy('status')" id="th-status"> Project Status <span id="sa-status">↕</span></th>
+            <th onclick="sortBy('stage')"  id="th-stage">  Project Stage <span id="sa-stage">↕</span></th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <div class="tbl-ft" id="tbl-ft"></div>
+      </div>
+    </div>
+
+    <!-- CHART PANEL -->
+    <div class="cpanel" id="cpanel">
+
+      <div class="cc">
+        <div class="cc-hdr">
+          <span class="cc-ttl">Group by</span>
+          <div style="display:flex;align-items:center;gap:7px">
+            <select class="csb" id="groupby" onchange="renderMainChart()">
+              <option value="team">BIM Team × Stage</option>
+              <option value="stage">Stage × Team</option>
+              <option value="teamcount">Projects per Team (Area)</option>
+              <option value="status">Team Bar Chart</option>
+            </select>
+            <span class="cc-hint">click to filter</span>
+          </div>
+        </div>
+        <div class="cbox" style="height:210px"><canvas id="c-main"></canvas></div>
+        <div class="clegend" id="leg-main"></div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;" id="support-filters">
+          <span style="font-size:11px;color:#9ca3af;align-self:center;">Support Level:</span>
+          <button onclick="setSupportFilter('all')" id="sf-all" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;background:#374151;color:#fff;">All</button>
+          <button onclick="setSupportFilter('High')" id="sf-High" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;background:#fff;color:#374151;">High</button>
+          <button onclick="setSupportFilter('Medium')" id="sf-Medium" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;background:#fff;color:#374151;">Medium</button>
+          <button onclick="setSupportFilter('Low')" id="sf-Low" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;background:#fff;color:#374151;">Low</button>
+        </div>
+      </div>
+
+      <div class="cc">
+        <div class="cc-hdr">
+          <span class="cc-ttl">Upcoming Deadlines</span>
+          <span class="cc-hint">click bar to filter</span>
+        </div>
+        <div class="cbox" style="height:230px"><canvas id="c-deadline"></canvas></div>
+      </div>
+
+      <div class="cc">
+        <div class="cc-hdr">
+          <span class="cc-ttl">Status Breakdown</span>
+          <span class="cc-hint">click to filter</span>
+        </div>
+        <div class="cbox" style="height:140px"><canvas id="c-status"></canvas></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- CALENDAR VIEW -->
+<div id="cal-view">
+  <div class="cal-nav">
+    <div class="cal-nav-btns">
+      <button onclick="calMove(-1)">‹ Prev</button>
+      <button onclick="calToday()">Today</button>
+      <button onclick="calMove(1)">Next ›</button>
+    </div>
+    <h2 id="cal-title"></h2>
+    <div style="font-size:12px;color:var(--muted)">Projects shown on their end date</div>
+  </div>
+  <div class="cal-grid-wrap">
+    <div class="cal-grid">
+      <div class="cal-dow">
+        <div>Mon</div><div>Tue</div><div>Wed</div>
+        <div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+      </div>
+      <div class="cal-days" id="cal-days"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="ocl(event)">
+  <div class="modal">
+    <div class="mhdr">
+      <h2 id="mtitle">New Project</h2>
+      <button class="mcl" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbody">
+      <input type="hidden" id="f-id">
+      <div class="fr">
+        <div class="fg"><label>Project Code *</label><input type="text" id="f-code" placeholder="P250999"></div>
+        <div class="fg"><label>BIM Team</label>
+          <select id="f-team-m">
+            <option value="">— None —</option>
+            <option>-N/A</option><option>BD 01</option><option>BD 02</option>
+            <option>BD 03</option><option>BD 04</option><option>BD 05</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>Project Name *</label><input type="text" id="f-name" placeholder="e.g. Tower Block Refurbishment"></div>
+      <div class="fr">
+        <div class="fg"><label>End Date</label><input type="date" id="f-date"></div>
+        <div class="fg"><label>Submission Date</label><input type="date" id="f-submit"></div>
+        <div class="fg"><label>Status</label>
+          <select id="f-status-m">
+            <option value="">— None —</option>
+            <option>Not Started</option><option>In-progress</option>
+            <option>On Hold</option><option>Completed</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>Stage</label>
+        <select id="f-stage-m">
+          <option value="">— None —</option>
+          <option>Not Started</option><option>PCD</option>
+          <option>50% DMP</option><option>100% DMP</option>
+          <option>50% DD</option><option>100% DD</option>
+          <option>50% SD</option><option>100% SD</option>
+          <option>50% CD</option><option>100% CD</option>
+          <option>50% CMP</option><option>100% CMP</option>
+          <option>TIS</option><option>IFC</option><option>TD</option><option>VO</option>
+          <option>Peer Review</option><option>On Hold</option><option>Completed</option>
+        </select>
+      </div>
+    </div>
+    <div class="mft">
+      <button class="btn btn-s" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-p" onclick="saveProject()">Save Project</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRnsDrw7mzWnvUwvxbqZ4Ns3WYQxDsBiglRc47NwGSzsn8c1VwwEqUfKOeQZSOn-Hcvv4del2I0tnck/pub?gid=1411536060&single=true&output=csv';
+
+let P = [
+  {id:1, code:'P250576',    name:'Rua Al-Medinah Super Block 5',                    team:'-N/A', date:'',           status:'On Hold',     stage:'On Hold'},
+  {id:2, code:'P250591',    name:"Maker's District Plot 03 & 04",                   team:'BD 02',date:'2026-06-01', status:'In-progress', stage:'IFC'},
+  {id:3, code:'P250607',    name:'Expo Valley Masterplan Development',              team:'BD 04',date:'',           status:'In-progress', stage:'VO'},
+  {id:4, code:'P250616',    name:'Top Golf',                                        team:'-N/A', date:'',           status:'Completed',   stage:'Completed'},
+  {id:5, code:'P250626A',   name:'Qiddiya Transport Hubs-NE',                       team:'BD 05',date:'',           status:'In-progress', stage:'IFC'},
+  {id:6, code:'P250626B',   name:'Qiddiya Transport Hubs-NW',                       team:'BD 05',date:'',           status:'In-progress', stage:'IFC'},
+  {id:7, code:'P250626E',   name:'Qiddiya Transport Hubs-SW',                       team:'BD 05',date:'',           status:'In-progress', stage:'IFC'},
+  {id:8, code:'P250653',    name:'Hudayriyat West Sports Spine',                    team:'BD 04',date:'2026-06-30', status:'In-progress', stage:'IFC'},
+  {id:9, code:'P250660',    name:'DSP - MP Residential development',                team:'BD 03',date:'2026-06-30', status:'In-progress', stage:'IFC'},
+  {id:10,code:'P250664',    name:'Discovery Towers',                                team:'-N/A', date:'',           status:'On Hold',     stage:'On Hold'},
+  {id:11,code:'P250670',    name:'Azure (Jumeirah ASORA Bay)',                      team:'BD 02',date:'',           status:'In-progress', stage:'TIS'},
+  {id:12,code:'P250672',    name:'DEC Campus legacy',                               team:'-N/A', date:'',           status:'Completed',   stage:'Completed'},
+  {id:13,code:'P250673',    name:'Warner Bros Expansion P2',                        team:'BD 02',date:'',           status:'In-progress', stage:'TD'},
+  {id:14,code:'P250691-02', name:'City Walk Phase 3 - 3.02',                        team:'BD 04',date:'2026-04-23', status:'In-progress', stage:'IFC'},
+  {id:15,code:'P250691-03', name:'City Walk Phase 3 - 3.03',                        team:'BD 04',date:'2026-05-08', status:'In-progress', stage:'IFC'},
+  {id:16,code:'P250691-04', name:'City Walk Phase 3 - 3.04',                        team:'BD 04',date:'2026-11-24', status:'In-progress', stage:'100% SD'},
+  {id:17,code:'P250691-05', name:'City Walk Phase 3 - 3.05',                        team:'BD 04',date:'2026-11-25', status:'In-progress', stage:'100% SD'},
+  {id:18,code:'P250691-06', name:'City Walk Phase 3 - 3.06A',                       team:'-N/A', date:'2026-06-12', status:'Not Started', stage:'Not Started'},
+  {id:19,code:'P250691-10', name:'City Walk Phase 3 - 3.10',                        team:'BD 04',date:'2027-02-27', status:'In-progress', stage:'VO'},
+  {id:20,code:'P250691-11', name:'City Walk Phase 3 - 3.11',                        team:'-N/A', date:'2026-07-10', status:'Not Started', stage:'Not Started'},
+  {id:21,code:'P250694',    name:'DGII Boulevard NW (Proj 131)',                    team:'BD 05',date:'',           status:'In-progress', stage:'IFC'},
+  {id:22,code:'P250695',    name:'DGII Boulevard NW (Proj 134)',                    team:'BD 05',date:'2026-12-20', status:'In-progress', stage:'50% SD'},
+  {id:23,code:'P250696',    name:'DGII Boulevard NW (Proj 135)',                    team:'BD 05',date:'',           status:'In-progress', stage:'100% DD'},
+  {id:24,code:'P250697',    name:'Manarat Phase 03',                                team:'BD 02',date:'',           status:'In-progress', stage:'IFC'},
+  {id:25,code:'P250698',    name:'DHRE - NEXUS',                                    team:'BD 02',date:'',           status:'In-progress', stage:'TD'},
+  {id:26,code:'P250717',    name:'JEDCO',                                           team:'BD 03',date:'2026-04-15', status:'In-progress', stage:'100% DD'},
+  {id:27,code:'P250718',    name:'D3',                                              team:'BD 01',date:'2026-10-05', status:'In-progress', stage:'100% DD'},
+  {id:28,code:'P250720',    name:'DEC Phase 2 Concourse 1',                         team:'-N/A', date:'',           status:'Completed',   stage:'Completed'},
+  {id:29,code:'P250721',    name:'Signature Tower',                                 team:'BD 01',date:'2026-12-30', status:'In-progress', stage:'100% SD'},
+  {id:30,code:'P250722',    name:'Qididya Beach D15',                               team:'BD 01',date:'2026-11-19', status:'In-progress', stage:'50% DMP'},
+  {id:31,code:'P250726',    name:'D3 Residence',                                    team:'BD 01',date:'2026-09-28', status:'In-progress', stage:'50% DD'},
+  {id:32,code:'P250728',    name:'Masdar City - Phase 1',                           team:'BD 02',date:'2026-12-18', status:'In-progress', stage:'100% DD'},
+  {id:33,code:'P250734',    name:'Central Plaza Hub (P1)',                           team:'BD 03',date:'',           status:'In-progress', stage:'100% CMP'},
+  {id:34,code:'P250735',    name:'Central Plaza Hub (P2)',                           team:'BD 03',date:'',           status:'In-progress', stage:'100% CMP'},
+  {id:35,code:'P250736',    name:'Marina Island (P3)',                              team:'BD 03',date:'',           status:'In-progress', stage:'100% CMP'},
+  {id:36,code:'P250743A',   name:'Ras El Hekma - Cliff Hotels',                    team:'BD 02',date:'',           status:'In-progress', stage:'100% SD'},
+  {id:37,code:'P250743B',   name:'Ras El Hekma - Residence Club',                  team:'BD 02',date:'',           status:'In-progress', stage:'50% SD'},
+  {id:38,code:'P250744',    name:'KSP',                                             team:'BD 01',date:'2026-11-30', status:'In-progress', stage:''},
+  {id:39,code:'P250769',    name:'Hadaeq Villas',                                   team:'BD 04',date:'',           status:'In-progress', stage:'TIS'},
+  {id:40,code:'P250788',    name:'Al Maryah Square',                                team:'-N/A', date:'',           status:'In-progress', stage:'100% CD'},
+  {id:41,code:'P250790',    name:'Humain - AI Data Centre Campus',                  team:'-N/A', date:'',           status:'Completed',   stage:'Completed'},
+  {id:42,code:'P250798',    name:'Ras El Hekma - Strategic Projects',               team:'-N/A', date:'2026-09-01', status:'In-progress', stage:'Peer Review'},
+  {id:43,code:'P250799',    name:'Ras El Hekma - Plots and Buildings',              team:'-N/A', date:'2026-09-01', status:'In-progress', stage:'Peer Review'},
+  {id:44,code:'P250800',    name:'Ras El Hekma - Masterplan (Wadi Yam)',            team:'-N/A', date:'',           status:'Completed',   stage:'Completed'},
+  {id:45,code:'P250801',    name:'Wadi Safar',                                      team:'BD 03',date:'2026-04-30', status:'In-progress', stage:'50% DMP'},
+  {id:46,code:'P250803',    name:'Ras El Hekma - Masterplan (M2/M4)',               team:'-N/A', date:'',           status:'In-progress', stage:'Peer Review'},
+  {id:47,code:'P250809',    name:'Al Etihad Sport Club',                            team:'BD 03',date:'2026-06-10', status:'In-progress', stage:'100% CD'},
+  {id:48,code:'P250812',    name:'BAYN Project Phase 2',                            team:'BD 02',date:'',           status:'In-progress', stage:'50% DMP'},
+  {id:49,code:'P250813D',   name:'DIC Golf CMP',                                   team:'-N/A', date:'',           status:'In-progress', stage:'50% CMP'},
+  {id:50,code:'P250815',    name:'DEC Carpark',                                     team:'BD 03',date:'2027-09-30', status:'In-progress', stage:'PCD'},
+  {id:51,code:'PXXXXXX-A',  name:'DEC East Halls',                                  team:'BD 03',date:'2026-07-16', status:'In-progress', stage:'100% CD'},
+  {id:52,code:'PXXXXXX-B',  name:'MOS Abha Stadium',                               team:'-N/A', date:'',           status:'In-progress', stage:'Not Started'},
+  {id:53,code:'PXXXXXX-C',  name:'QIC District 18',                                 team:'BD 04',date:'',           status:'Not Started', stage:'Not Started'},
+];
+let nextId = 54;
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+const TODAY = new Date('2026-07-01');
+let filtered = [], sortCol='code', sortDir=1;
+let activeView='split', statFilter=null;
+let charts={}, calYear=2026, calMonth=6; // 0-indexed month
+let hiddenStages=new Set();
+
+// ══════════════════════════════════════════
+// COLOURS
+// ══════════════════════════════════════════
+// Notion-style pastel palette
+const SCOL={
+  'IFC':         '#9B8FCC', // soft purple
+  'VO':          '#6DC56A', // soft green
+  'TD':          '#63B3ED', // soft blue
+  'TIS':         '#E8C44B', // soft yellow
+  'PCD':         '#4DBDBA', // soft teal
+  'Completed':   '#6DC56A', // green
+  'On Hold':     '#E57FA0', // soft pink
+  'Not Started': '#CBD5E0', // light gray
+  'Peer Review': '#E05555', // soft red
+  '100% SD':    '#F6AD55', // soft orange
+  '100% CD':    '#E8C44B', // soft yellow
+  '100% DD':    '#B794F4', // soft lavender
+  '100% CMP':   '#68D391', // soft green
+  '100% DMP':   '#FC8181', // soft red
+  '50% SD':     '#9AE6B4', // light green
+  '50% CD':     '#F687B3', // soft pink
+  '50% DD':     '#FC8181', // soft red
+  '50% CMP':    '#81E6D9', // soft teal
+  '50% DMP':    '#90CDF4', // soft blue
+};
+const TCOL={
+  'BD 01':'#E8C44B', // yellow
+  'BD 02':'#6DC56A', // green
+  'BD 03':'#B794F4', // lavender
+  'BD 04':'#F6AD55', // orange
+  'BD 05':'#F687B3', // pink
+  '-N/A': '#CBD5E0', // gray
+};
+const STCOL={
+  'In-progress':'#F6AD55',
+  'Completed':  '#68D391',
+  'On Hold':    '#FC8181',
+  'Not Started':'#CBD5E0',
+};
+// Calendar chip colours by team
+const CCOL={
+  'BD 01':'#dbeafe','BD 02':'#fce7f3','BD 03':'#fef3c7',
+  'BD 04':'#dcfce7','BD 05':'#ede9fe','-N/A':'#f1f5f9',''  :'#f1f5f9'
+};
+const CTEXT={
+  'BD 01':'#1e40af','BD 02':'#9d174d','BD 03':'#78350f',
+  'BD 04':'#14532d','BD 05':'#4c1d95','-N/A':'#475569',''  :'#475569'
+};
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+function init(){
+  fillDropdowns();
+  applyFilters();
+  document.addEventListener('click', ieOutside);
+}
+function fillDropdowns(){
+  const teams   =[...new Set(P.map(p=>p.team).filter(Boolean))].sort();
+  const statuses=[...new Set(P.map(p=>p.status).filter(Boolean))].sort();
+  const stages  =[...new Set(P.map(p=>p.stage).filter(Boolean))].sort();
+  fd('f-team',teams); fd('f-status',statuses); fd('f-stage',stages);
+}
+function fd(id,vals){
+  const s=document.getElementById(id);
+  while(s.options.length>1)s.remove(1);
+  vals.forEach(v=>s.add(new Option(v,v)));
+}
+
+// ══════════════════════════════════════════
+// FILTERS
+// ══════════════════════════════════════════
+function applyFilters(){
+  const q =(document.getElementById('search').value||'').toLowerCase();
+  const ft=document.getElementById('f-team').value;
+  const fs=document.getElementById('f-status').value;
+  const fg=document.getElementById('f-stage').value;
+  let base=P;
+  if(statFilter==='overdue') base=base.filter(p=>p.date&&(new Date(p.date)-TODAY)/86400000<0&&p.status!=='Completed');
+  else if(statFilter)        base=base.filter(p=>p.status===statFilter);
+  filtered=base.filter(p=>
+    (!q ||p.code.toLowerCase().includes(q)||p.name.toLowerCase().includes(q))&&
+    (!ft||p.team===ft)&&(!fs||p.status===fs)&&(!fg||p.stage===fg)
+  );
+  doSort();
+  renderStats(); renderTable(); renderChips(q,ft,fs,fg);
+  if(activeView!=='table'&&activeView!=='calendar') renderAllCharts();
+  if(activeView==='calendar') renderCal();
+}
+function clearAllFilters(){
+  document.getElementById('search').value='';
+  ['f-team','f-status','f-stage'].forEach(id=>document.getElementById(id).value='');
+  statFilter=null; applyFilters();
+}
+function clrF(t){
+  if(t==='q')    document.getElementById('search').value='';
+  if(t==='team') document.getElementById('f-team').value='';
+  if(t==='stat') document.getElementById('f-status').value='';
+  if(t==='stag') document.getElementById('f-stage').value='';
+  if(t==='sf')   statFilter=null;
+  applyFilters();
+}
+function toggleStage(s){
+  if(hiddenStages.has(s)) hiddenStages.delete(s);
+  else hiddenStages.add(s);
+  renderMainChart();
+}
+function setFlt(type,val){
+  if(type==='team') document.getElementById('f-team').value=val;
+  if(type==='stat') document.getElementById('f-status').value=val;
+  if(type==='stag') document.getElementById('f-stage').value=val;
+  applyFilters(); toast('Filtered: '+val);
+}
+function renderChips(q,ft,fs,fg){
+  const chips=[];
+  if(q)  chips.push(`<span class="chip">🔍 "${q}"<span class="cx" onclick="clrF('q')">×</span></span>`);
+  if(ft) chips.push(`<span class="chip">Team: ${ft}<span class="cx" onclick="clrF('team')">×</span></span>`);
+  if(fs) chips.push(`<span class="chip">Status: ${fs}<span class="cx" onclick="clrF('stat')">×</span></span>`);
+  if(fg) chips.push(`<span class="chip">Stage: ${fg}<span class="cx" onclick="clrF('stag')">×</span></span>`);
+  if(statFilter) chips.push(`<span class="chip">📌 ${statFilter}<span class="cx" onclick="clrF('sf')">×</span></span>`);
+  document.getElementById('chips').innerHTML = chips.length ? chips.join('') : '<span class="fhint" id="fhint">No active filters — click a stat card or chart to filter</span>';
+}
+
+// ══════════════════════════════════════════
+// SORT
+// ══════════════════════════════════════════
+function sortBy(c){
+  sortDir=sortCol===c?-sortDir:1; sortCol=c;
+  ['code','name','team','date','status','stage'].forEach(x=>{
+    document.getElementById('th-'+x)?.classList.toggle('sorted',x===c);
+    const sa=document.getElementById('sa-'+x);
+    if(sa) sa.textContent=x===c?(sortDir===1?' ↓':' ↑'):' ↕';
+  });
+  doSort(); renderTable();
+}
+function doSort(){
+  filtered.sort((a,b)=>{const av=a[sortCol]||'',bv=b[sortCol]||'';return av<bv?-sortDir:av>bv?sortDir:0;});
+}
+
+// ══════════════════════════════════════════
+// RENDER TABLE
+// ══════════════════════════════════════════
+const fD=d=>d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
+const dC=d=>{if(!d)return'';const diff=(new Date(d)-TODAY)/86400000;return diff<0?'date-od':diff<21?'date-sn':''};
+const tC=t=>({'BD 01':'t-BD01','BD 02':'t-BD02','BD 03':'t-BD03','BD 04':'t-BD04','BD 05':'t-BD05','-N/A':'t-NA'}[t]||'t-NA');
+const sC=s=>'s-'+(s||'').replace(/\s+/g,'-');
+const gC=s=>{
+  const m={IFC:'g-IFC',VO:'g-VO',TD:'g-TD',TIS:'g-TIS',PCD:'g-PCD',Completed:'g-Completed','On Hold':'g-On-Hold',
+  'Not Started':'g-Not-Started','Peer Review':'g-Peer-Review','100% SD':'g-100SD','100% CD':'g-100CD',
+  '100% DD':'g-100DD','100% CMP':'g-100CMP','50% SD':'g-50SD','50% CD':'g-50CD','50% DD':'g-50DD',
+  '50% CMP':'g-50CMP','50% DMP':'g-50DMP','100% DMP':'g-100DMP'};
+  return m[s]||'';
+};
+
+function renderTable(){
+  const n=filtered.length;
+  document.getElementById('tbl-cnt').textContent=`${n} project${n!==1?'s':''}`;
+  document.getElementById('tbl-ft').textContent=`Showing ${n} of ${P.length} projects`;
+  const tb=document.getElementById('tbody');
+  if(!n){tb.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">🔍 No projects match.</td></tr>`;return;}
+  tb.innerHTML=filtered.map(p=>`
+  <tr>
+    <td class="code-c editable" onclick="ieOpen(event,${p.id},'code')">${p.code}</td>
+    <td class="editable" style="font-weight:500;max-width:210px" onclick="ieOpen(event,${p.id},'name')">${p.name}</td>
+    <td class="editable" onclick="ieOpen(event,${p.id},'team')">${p.team?`<span class="badge ${tC(p.team)}">${p.team}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+    <td class="editable ${dC(p.date)}" onclick="ieOpen(event,${p.id},'date')">${fD(p.date)}</td>
+    <td class="editable" onclick="ieOpen(event,${p.id},'submit')">${fD(p.submit)}</td>
+    <td class="editable" onclick="ieOpen(event,${p.id},'status')">${p.status?`<span class="badge ${sC(p.status)}">${p.status}</span>`:'—'}</td>
+    <td class="editable" onclick="ieOpen(event,${p.id},'stage')">${p.stage?`<span class="badge ${gC(p.stage)}">${p.stage}</span>`:'—'}</td>
+  </tr>`).join('');
+}
+
+// ══════════════════════════════════════════
+// INLINE EDITOR
+// ══════════════════════════════════════════
+let ieState={id:null,field:null};
+const SELECT_OPTS={
+  team: ['-N/A','BD 01','BD 02','BD 03','BD 04','BD 05'],
+  status: ['Not Started','In-progress','On Hold','Completed'],
+  stage: ['Not Started','PCD','50% DMP','100% DMP','50% DD','100% DD','50% SD','100% SD','50% CD','100% CD','50% CMP','100% CMP','TIS','IFC','TD','VO','Peer Review','On Hold','Completed'],
+};
+
+function ieOpen(e, id, field){
+  e.stopPropagation();
+  const p=P.find(x=>x.id===id);
+  ieState={id,field};
+  const wrap=document.getElementById('ie-wrap');
+  const txt=document.getElementById('ie-text');
+  const dt=document.getElementById('ie-date');
+  const sel=document.getElementById('ie-select');
+  txt.style.display='none'; dt.style.display='none'; sel.style.display='none';
+
+  if(field==='date'||field==='submit'){
+    dt.style.display='block'; dt.value=p[field]||'';
+  } else if(SELECT_OPTS[field]){
+    sel.style.display='block'; sel.innerHTML='<option value="">— clear —</option>'+SELECT_OPTS[field].map(v=>`<option${p[field]===v?' selected':''}>${v}</option>`).join('');
+  } else {
+    txt.style.display='block'; txt.value=p[field]||''; setTimeout(()=>{txt.focus();txt.select();},10);
+  }
+
+  // Position near clicked cell
+  const rect=e.currentTarget.getBoundingClientRect();
+  wrap.style.top=(rect.bottom+window.scrollY+4)+'px';
+  wrap.style.left=Math.min(rect.left+window.scrollX, window.innerWidth-200)+'px';
+  wrap.classList.add('show');
+}
+function ieSave(){
+  const p=P.find(x=>x.id===ieState.id); if(!p) return;
+  const field=ieState.field;
+  let val='';
+  if(field==='date'||field==='submit')   val=document.getElementById('ie-date').value;
+  else if(SELECT_OPTS[field])            val=document.getElementById('ie-select').value;
+  else                                   val=document.getElementById('ie-text').value.trim();
+  p[field]=val;
+  ieClose();
+  fillDropdowns(); applyFilters();
+  toast('✓ Saved');
+}
+function ieKey(e){if(e.key==='Enter'){e.preventDefault();ieSave();}if(e.key==='Escape')ieClose();}
+function ieDelete(){
+  const idx=P.findIndex(x=>x.id===ieState.id);
+  if(idx>-1){P.splice(idx,1);toast('Row deleted');}
+  ieClose(); fillDropdowns(); applyFilters();
+}
+function ieClose(){document.getElementById('ie-wrap').classList.remove('show');ieState={id:null,field:null};}
+function ieOutside(e){if(!document.getElementById('ie-wrap').contains(e.target))ieClose();}
+
+// ══════════════════════════════════════════
+// STATS CARDS
+// ══════════════════════════════════════════
+function renderStats(){
+  const all=filtered;
+  const cards=[
+    {val:all.length,         lbl:'Total',         col:'#1a1a1a', key:null},
+    {val:all.filter(p=>p.status==='In-progress').length, lbl:'In Progress', col:'#ea580c', key:'In-progress'},
+    {val:all.filter(p=>p.status==='Completed').length,   lbl:'Completed',   col:'#16a34a', key:'Completed'},
+    {val:all.filter(p=>p.status==='On Hold').length,     lbl:'On Hold',     col:'#dc2626', key:'On Hold'},
+    {val:all.filter(p=>p.date&&(new Date(p.date)-TODAY)/86400000<0&&p.status!=='Completed').length, lbl:'Overdue', col:'#d97706', key:'overdue'},
+  ];
+  document.getElementById('stats').innerHTML=cards.map(c=>`
+  <div class="sc${statFilter===c.key&&c.key?' act':''}" onclick="toggleStat('${c.key}')">
+    <div class="sc-v" style="color:${c.col}">${c.val}</div>
+    <div class="sc-l">${c.lbl}</div>
+  </div>`).join('');
+}
+function toggleStat(k){statFilter=statFilter===k?null:k;applyFilters();}
+
+// ══════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════
+
+// Shared tooltip style
+const TT={backgroundColor:'rgba(255,255,255,.97)',borderColor:'#e8e8e6',borderWidth:1,
+  padding:10,cornerRadius:6,titleColor:'#1a1a1a',bodyColor:'#6b6b69',
+  titleFont:{size:12,weight:'600'},bodyFont:{size:11},
+  boxWidth:10,boxHeight:10,usePointStyle:true};
+
+// Dashed reference line plugin (draws vertical dashed line on bar/line charts)
+const refLine={
+  id:'refLine',
+  afterDraw(chart,_,opts){
+    const v=opts.value; if(!v) return;
+    const {ctx,chartArea,scales}=chart;
+    const axis=opts.axis||'x';
+    const px=scales[axis]?.getPixelForValue(v);
+    if(!px) return;
+    ctx.save();
+    ctx.strokeStyle=opts.color||'#9ca3af';
+    ctx.lineWidth=1.5;
+    ctx.setLineDash([6,5]);
+    ctx.beginPath();
+    if(axis==='x'){ctx.moveTo(px,chartArea.top);ctx.lineTo(px,chartArea.bottom);}
+    else           {ctx.moveTo(chartArea.left,px);ctx.lineTo(chartArea.right,px);}
+    ctx.stroke();
+    ctx.restore();
+  }
+};
+
+// Donut centre text plugin
+const donutCenter={
+  id:'donutCenter',
+  afterDraw(chart){
+    if(chart.config.type!=='doughnut') return;
+    const {ctx,chartArea}=chart;
+    const total=chart.data.datasets[0].data.reduce((a,b)=>a+(b||0),0);
+    const cx=(chartArea.left+chartArea.right)/2;
+    const cy=(chartArea.top+chartArea.bottom)/2;
+    ctx.save();
+    ctx.fillStyle='#1a1a1a';
+    ctx.font='bold 26px -apple-system,BlinkMacSystemFont,sans-serif';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText(total,cx,cy-8);
+    ctx.fillStyle='#a0a09e';
+    ctx.font='11px -apple-system,sans-serif';
+    ctx.fillText('Total',cx,cy+12);
+    ctx.restore();
+  }
+};
+
+function dk(k){if(charts[k]){charts[k].destroy();charts[k]=null;}}
+
+function renderAllCharts(){
+  if(typeof Chart==='undefined') return;
+  try{ Chart.register(refLine, donutCenter); }catch(e){}
+  renderMainChart(); renderDeadlineChart(); renderStatusChart();
+}
+
+// ─ SUPPORT LEVEL FILTER ─
+let activeSupportFilter = 'all';
+function setSupportFilter(level){
+  activeSupportFilter = level;
+  // Update button styles
+  ['all','High','Medium','Low'].forEach(l => {
+    const btn = document.getElementById('sf-' + l);
+    if(!btn) return;
+    if(l === level){
+      btn.style.background = '#374151'; btn.style.color = '#fff';
+    } else {
+      btn.style.background = '#fff'; btn.style.color = '#374151';
+    }
+  });
+  renderMainChart();
+}
+
+// ─ MAIN CONFIGURABLE ─
+function renderMainChart(){
+  dk('main');
+  const mode=document.getElementById('groupby').value;
+  const ctx=document.getElementById('c-main').getContext('2d');
+  const leg=document.getElementById('leg-main');
+
+  // Shared axis style
+  const xScaleStacked={
+    stacked:true,
+    border:{display:false},
+    grid:{color:'rgba(0,0,0,.05)',lineWidth:1},
+    ticks:{font:{size:10},color:'#b0b0ae',stepSize:1,maxTicksLimit:10},
+  };
+  const yScaleStacked={
+    stacked:true,
+    border:{display:false},
+    grid:{display:false},
+    ticks:{font:{size:11,weight:'500'},color:'#374151'},
+  };
+
+  if(mode==='team'){
+    const TO=['BD 01','BD 02','BD 03','BD 04','BD 05','-N/A'];
+    const teams=TO.filter(t=>P.some(p=>p.team===t));
+    const supportFiltered = activeSupportFilter === 'all' ? filtered : filtered.filter(p=>p.support===activeSupportFilter);
+    const stages=[...new Set(supportFiltered.map(p=>p.stage).filter(Boolean))].sort();
+    const refVal=6;
+    charts.main=new Chart(ctx,{
+      type:'bar',
+      data:{labels:teams.map(t=>t==='-N/A'?'No BIM Team':t),datasets:stages.map(s=>({
+        label:s,
+        data:teams.map(t=>filtered.filter(p=>p.team===t&&p.stage===s).length),
+        backgroundColor:hiddenStages.has(s)?'transparent':(SCOL[s]||'#CBD5E0'),
+        borderWidth:0,
+        borderRadius:2,
+        barPercentage:0.55,categoryPercentage:0.75,
+        hidden:hiddenStages.has(s),
+      }))},
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        animation:{duration:250},
+        indexAxis:'y',
+        layout:{padding:{right:8}},
+        onClick:(e,els)=>{if(els.length)setFlt('team',teams[els[0].index]);},
+        plugins:{
+          legend:{display:false},
+          tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}`}},
+          refLine:{value:refVal,axis:'x',color:'#9ca3af'},
+        },
+        scales:{x:xScaleStacked, y:yScaleStacked},
+      }
+    });
+    leg.innerHTML=stages.map(s=>`<div class="li" title="${hiddenStages.has(s)?'Click to show':'Click to hide'}" onclick="toggleStage('${s}')" style="opacity:${hiddenStages.has(s)?'0.35':'1'};text-decoration:${hiddenStages.has(s)?'line-through':'none'}"><div class="ld" style="background:${SCOL[s]||'#CBD5E0'}"></div>${s}</div>`).join('');
+
+  }else if(mode==='stage'){
+    const stages=[...new Set(filtered.map(p=>p.stage).filter(Boolean))].sort();
+    const TO=['BD 01','BD 02','BD 03','BD 04','BD 05','-N/A'];
+    const teams=TO.filter(t=>filtered.some(p=>p.team===t));
+    charts.main=new Chart(ctx,{
+      type:'bar',
+      data:{labels:stages,datasets:teams.map(t=>({
+        label:t,
+        data:stages.map(s=>filtered.filter(p=>p.stage===s&&p.team===t).length),
+        backgroundColor:TCOL[t]||'#CBD5E0',
+        borderWidth:0,borderRadius:2,
+        barPercentage:0.55,categoryPercentage:0.75,
+      }))},
+      options:{
+        responsive:true,maintainAspectRatio:false,animation:{duration:250},
+        onClick:(e,els)=>{if(els.length)setFlt('stag',stages[els[0].index]);},
+        plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}`}}},
+        scales:{x:xScaleStacked,y:yScaleStacked},
+        indexAxis:'y',
+      }
+    });
+    leg.innerHTML=teams.map(t=>`<div class="li" onclick="setFlt('team','${t}')"><div class="ld" style="background:${TCOL[t]||'#CBD5E0'}"></div>${t}</div>`).join('');
+
+  }else if(mode==='teamcount'){
+    // Area chart — projects per team
+    const TO=['BD 02','BD 03','BD 04','BD 05','BD 01','-N/A'];
+    const teams=TO.filter(t=>filtered.some(p=>p.team===t));
+    const cnts=teams.map(t=>filtered.filter(p=>p.team===t).length);
+    charts.main=new Chart(ctx,{
+      type:'line',
+      data:{labels:teams.map(t=>t==='-N/A'?'No BIM Team':t),datasets:[{
+        label:'BIM Team',data:cnts,
+        borderColor:'#63B3ED',backgroundColor:'rgba(99,179,237,.12)',
+        borderWidth:2,pointRadius:4,pointBackgroundColor:'#63B3ED',
+        pointBorderColor:'#fff',pointBorderWidth:2,
+        fill:true,tension:0.35,
+      }]},
+      options:{
+        responsive:true,maintainAspectRatio:false,animation:{duration:250},
+        onClick:(e,els)=>{if(els.length)setFlt('team',teams[els[0].index]);},
+        plugins:{
+          legend:{display:true,position:'bottom',labels:{...TT,color:'#6b6b69',boxWidth:0,font:{size:11}}},
+          tooltip:{...TT,callbacks:{label:c=>` ${c.raw} projects`}},
+          refLine:{value:6,axis:'y',color:'#9ca3af'},
+        },
+        scales:{
+          x:{border:{display:false},grid:{display:false},ticks:{font:{size:11,weight:'500'},color:'#374151'}},
+          y:{border:{display:false},beginAtZero:true,
+             grid:{color:'rgba(0,0,0,.05)',lineWidth:1,drawTicks:false},
+             ticks:{font:{size:10},color:'#b0b0ae',stepSize:3},
+          },
+        }
+      }
+    });
+    leg.innerHTML='';
+
+  }else{
+    // Status vertical bar
+    const TO=['BD 02','BD 03','BD 04','BD 05','BD 01','-N/A'];
+    const teams=TO.filter(t=>filtered.some(p=>p.team===t));
+    const cnts=teams.map(t=>filtered.filter(p=>p.team===t).length);
+    charts.main=new Chart(ctx,{
+      type:'bar',
+      data:{labels:teams.map(t=>t==='-N/A'?'No BIM Team':t),datasets:[{
+        data:cnts,
+        backgroundColor:teams.map(t=>TCOL[t]||'#CBD5E0'),
+        borderWidth:0,borderRadius:5,
+        barPercentage:0.5,categoryPercentage:0.6,
+      }]},
+      options:{
+        responsive:true,maintainAspectRatio:false,animation:{duration:250},
+        onClick:(e,els)=>{if(els.length)setFlt('team',teams[els[0].index]);},
+        plugins:{
+          legend:{display:false},
+          tooltip:{...TT,callbacks:{title:i=>teams[i[0].dataIndex],label:c=>` ${c.raw} projects`}},
+          refLine:{value:6,axis:'y',color:'#9ca3af'},
+        },
+        scales:{
+          x:{border:{display:false},grid:{display:false},ticks:{font:{size:11,weight:'500'},color:'#374151'}},
+          y:{border:{display:false},beginAtZero:true,
+             grid:{color:'rgba(0,0,0,.05)',lineWidth:1,drawTicks:false},
+             ticks:{font:{size:10},color:'#b0b0ae',stepSize:3},
+          },
+        }
+      }
+    });
+    leg.innerHTML='';
+  }
+}
+
+// ─ DEADLINE CHART (project names + dates) ─
+function renderDeadlineChart(){
+  dk('deadline');
+  const now=TODAY.getTime();
+  const withDate=filtered
+    .filter(p=>p.date&&p.status!=='Completed')
+    .map(p=>({...p,diff:Math.round((new Date(p.date)-now)/86400000)}))
+    .sort((a,b)=>a.diff-b.diff)
+    .slice(0,18);
+
+  if(!withDate.length){
+    dk('deadline');
+    const ctx=document.getElementById('c-deadline').getContext('2d');
+    ctx.clearRect(0,0,300,230);
+    ctx.fillStyle='#a0a09e'; ctx.font='12px sans-serif'; ctx.textAlign='center';
+    ctx.fillText('No projects with end dates in current filter',150,115);
+    return;
+  }
+
+  const labels=withDate.map(p=>p.code);
+  const bgColors=withDate.map(p=>
+    p.diff<0?'#ef4444':p.diff<30?'#f97316':p.diff<90?'#eab308':'#22c55e'
+  );
+
+  const ctx=document.getElementById('c-deadline').getContext('2d');
+  charts.deadline=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'Days to deadline',
+        data:withDate.map(p=>Math.abs(p.diff)||1),
+        backgroundColor:bgColors,
+        borderWidth:0,
+        borderRadius:3,
+        barPercentage:0.45,
+        categoryPercentage:0.8,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:250},
+      indexAxis:'y',
+      onClick:(e,els)=>{
+        if(els.length){
+          const p=withDate[els[0].index];
+          document.getElementById('search').value=p.code;
+          applyFilters(); toast('Filtered: '+p.code);
+        }
+      },
+      plugins:{
+        legend:{display:false},
+        tooltip:{...TT,
+          callbacks:{
+            title:items=>{const p=withDate[items[0].dataIndex];return p.name;},
+            label:items=>{
+              const p=withDate[items.dataIndex];
+              const d=fD(p.date);
+              return p.diff<0?` ⚠ OVERDUE ${Math.abs(p.diff)}d (${d})`
+                            :` ${p.diff}d remaining (${d})`;
+            }
+          }
+        }
+      },
+      scales:{
+        x:{border:{display:false},grid:{color:'rgba(0,0,0,.05)',lineWidth:1},
+           ticks:{font:{size:10},color:'#b0b0ae'},
+           title:{display:true,text:'Days',font:{size:10},color:'#b0b0ae'}},
+        y:{border:{display:false},grid:{display:false},
+           ticks:{font:{size:10,weight:'500'},color:'#374151'}}
+      }
+    }
+  });
+}
+
+// ─ STATUS DONUT ─
+function renderStatusChart(){
+  dk('status');
+  const sts=['In-progress','Completed','On Hold','Not Started'];
+  const cnts=sts.map(s=>filtered.filter(p=>p.status===s).length);
+  const ctx=document.getElementById('c-status').getContext('2d');
+  charts.status=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels:sts,datasets:[{
+      data:cnts,
+      backgroundColor:sts.map(s=>STCOL[s]),
+      borderWidth:3,
+      borderColor:'#fafaf9',
+      hoverBorderColor:'#fafaf9',
+      hoverOffset:4,
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:{duration:300},
+      onClick:(e,els)=>{if(els.length)setFlt('stat',sts[els[0].index]);},
+      cutout:'68%',
+      plugins:{
+        legend:{
+          display:true,position:'bottom',
+          labels:{font:{size:11},color:'#6b6b69',boxWidth:10,padding:12,usePointStyle:true,pointStyleWidth:10},
+          onClick:(e,item)=>{ setFlt('stat', item.text); }
+        },
+        tooltip:{...TT,callbacks:{label:c=>` ${c.label}: ${c.raw}`}},
+        donutCenter:{},
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// CALENDAR
+// ══════════════════════════════════════════
+function calMove(d){
+  calMonth+=d;
+  if(calMonth>11){calMonth=0;calYear++;}
+  if(calMonth<0){calMonth=11;calYear--;}
+  renderCal();
+}
+function calToday(){calYear=TODAY.getFullYear();calMonth=TODAY.getMonth();renderCal();}
+
+function renderCal(){
+  const MONTHS=['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+  document.getElementById('cal-title').textContent=`${MONTHS[calMonth]} ${calYear}`;
+
+  const firstDay=new Date(calYear,calMonth,1);
+  let startDow=firstDay.getDay(); // 0=Sun
+  startDow=(startDow+6)%7; // shift to Mon=0
+
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const prevDays=new Date(calYear,calMonth,0).getDate();
+
+  // Build date→projects map
+  const byDate={};
+  filtered.filter(p=>p.date).forEach(p=>{
+    const d=p.date; // YYYY-MM-DD
+    if(!byDate[d])byDate[d]=[];
+    byDate[d].push(p);
+  });
+
+  const cells=[];
+  // prev month padding
+  for(let i=startDow-1;i>=0;i--){
+    cells.push({day:prevDays-i,cur:false,dateStr:null});
+  }
+  // current month
+  for(let d=1;d<=daysInMonth;d++){
+    const mm=String(calMonth+1).padStart(2,'0');
+    const dd=String(d).padStart(2,'0');
+    const dateStr=`${calYear}-${mm}-${dd}`;
+    cells.push({day:d,cur:true,dateStr,projs:byDate[dateStr]||[]});
+  }
+  // next month padding
+  let nd=1;
+  while(cells.length%7!==0) cells.push({day:nd++,cur:false,dateStr:null});
+
+  const todayStr=`${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-${String(TODAY.getDate()).padStart(2,'0')}`;
+
+  document.getElementById('cal-days').innerHTML=cells.map(c=>`
+  <div class="cal-day${!c.cur?' other-month':''}${c.dateStr===todayStr?' today':''}">
+    <div class="cal-day-num">
+      ${c.dateStr===todayStr?`<span class="dn">${c.day}</span>`:`<span>${c.day}</span>`}
+    </div>
+    ${(c.projs||[]).slice(0,3).map(p=>`
+      <div class="cal-proj" title="${p.name} · ${p.team||'No team'}"
+        style="background:${CCOL[p.team||'']};color:${CTEXT[p.team||'']}"
+        onclick="openModal(${p.id})">
+        ${p.code}
+      </div>`).join('')}
+    ${(c.projs||[]).length>3?`<div class="cal-more">+${c.projs.length-3} more</div>`:''}
+  </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// VIEW SWITCHER
+// ══════════════════════════════════════════
+function switchView(v){
+  activeView=v;
+  ['split','table','charts','calendar'].forEach(x=>{
+    document.getElementById('tab-'+x)?.classList.toggle('active',x===v);
+  });
+  const mw=document.getElementById('main-wrap');
+  const cv=document.getElementById('cal-view');
+  const vs=document.getElementById('view-split');
+  const cp=document.getElementById('cpanel');
+  const tblDiv=vs.querySelector('div:first-child');
+
+  mw.style.display=v==='calendar'?'none':'block';
+  cv.style.display=v==='calendar'?'block':'none';
+
+  if(v==='split'){
+    vs.style.gridTemplateColumns='';
+    tblDiv.style.display=''; cp.style.display='';
+  }else if(v==='table'){
+    vs.style.gridTemplateColumns='1fr';
+    tblDiv.style.display=''; cp.style.display='none';
+  }else if(v==='charts'){
+    vs.style.gridTemplateColumns='1fr';
+    tblDiv.style.display='none'; cp.style.display='';
+    cp.style.maxWidth='700px'; cp.style.margin='0 auto';
+  }
+
+  if(v==='calendar'){renderCal();return;}
+  if(v!=='table') setTimeout(renderAllCharts,60);
+}
+
+// ══════════════════════════════════════════
+// MODAL
+// ══════════════════════════════════════════
+function openModal(id){
+  const p=id?P.find(x=>x.id===id):null;
+  document.getElementById('mtitle').textContent=p?'Edit Project':'New Project';
+  document.getElementById('f-id').value       =p?p.id:'';
+  document.getElementById('f-code').value     =p?p.code:'';
+  document.getElementById('f-name').value     =p?p.name:'';
+  document.getElementById('f-team-m').value   =p?p.team||'':'';
+  document.getElementById('f-date').value     =p?p.date:'';
+  document.getElementById('f-submit').value   =p?p.submit||'':'';
+  document.getElementById('f-status-m').value =p?p.status||'':'';
+  document.getElementById('f-stage-m').value  =p?p.stage||'':'';
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open');}
+function ocl(e){if(e.target===document.getElementById('overlay'))closeModal();}
+function saveProject(){
+  const code=document.getElementById('f-code').value.trim();
+  const name=document.getElementById('f-name').value.trim();
+  if(!code||!name){toast('Code & Name required');return;}
+  const id=document.getElementById('f-id').value;
+  const obj={
+    id:id?parseInt(id):nextId++,code,name,
+    team:document.getElementById('f-team-m').value,
+    date:document.getElementById('f-date').value,
+    submit:document.getElementById('f-submit').value,
+    status:document.getElementById('f-status-m').value,
+    stage:document.getElementById('f-stage-m').value,
+  };
+  if(id) P[P.findIndex(p=>p.id===parseInt(id))]=obj;
+  else   P.push(obj);
+  closeModal(); fillDropdowns(); applyFilters();
+  document.getElementById('hdr-sub').textContent=`${P.length} projects · updated just now`;
+  toast(id?'✓ Project updated':'✓ Project added');
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ══════════════════════════════════════════
+// CSV LOADER — Google Sheets live data
+// ══════════════════════════════════════════
+function normalizeDate(d){
+  if(!d) return '';
+  d=d.trim().replace(/^"|"$/g,'');
+  if(!d) return '';
+  // Already YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+  // DD/MM/YYYY or M/D/YYYY or D/M/YYYY
+  if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)){
+    const parts=d.split('/');
+    // Detect MM/DD/YYYY vs DD/MM/YYYY: if first part >12, it's day
+    const a=parseInt(parts[0]),b=parseInt(parts[1]),yr=parts[2];
+    if(a>12) return `${yr}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+    // Assume DD/MM/YYYY (European/UK)
+    return `${yr}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+  }
+  // Try generic parse as fallback
+  const p=new Date(d);
+  if(!isNaN(p)) return p.toISOString().split('T')[0];
+  return '';
+}
+
+function parseCSVLine(line){
+  const result=[]; let cur=''; let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){result.push(cur.trim());cur='';}
+    else{cur+=c;}
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+function loadChartJS(){
+  return new Promise((resolve,reject)=>{
+    if(typeof Chart!=='undefined'){resolve();return;}
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js';
+    s.onload=resolve; s.onerror=reject;
+    document.head.appendChild(s);
+  });
+}
+
+async function loadData(){
+  const loading=document.getElementById('loading-overlay');
+  loading.style.display='flex';
+  try{
+    await loadChartJS();
+    const res=await fetch(SHEET_CSV_URL);
+    if(!res.ok) throw new Error('Network error');
+    const text=await res.text();
+    const lines=text.trim().split('\n').filter(l=>l.trim());
+    const dataLines=lines.slice(1); // skip header row
+    const loaded=dataLines.map((line,i)=>{
+      const v=parseCSVLine(line);
+      return{
+        id:i+1,
+        code:(v[0]||'').replace(/^"|"$/g,''),
+        name:(v[1]||'').replace(/^"|"$/g,''),
+        team:(v[2]||'').replace(/^"|"$/g,''),
+        date:normalizeDate(v[3]||''),
+        submit:normalizeDate(v[4]||''),
+        status:(v[5]||'').replace(/^"|"$/g,''),
+        stage:(v[6]||'').replace(/^"|"$/g,''),
+        support:(v[7]||'').replace(/^"|"$/g,''),
+      };
+    }).filter(p=>p.code);
+    P=loaded;
+    nextId=P.length+1;
+    const now=new Date();
+    document.getElementById('hdr-sub').textContent=
+      `${P.length} projects · refreshed ${now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;
+    toast('✓ Data loaded from Google Sheets');
+    init();
+  }catch(err){
+    await loadChartJS().catch(()=>{});
+    toast('⚠ Could not load Google Sheet — please check the connection');
+    init();
+  }finally{
+    loading.style.display='none';
+  }
+}
+
+if(document.readyState==='complete'){loadData();}
+else{window.addEventListener('load',loadData);}
+</script>
+</body>
+</html>
