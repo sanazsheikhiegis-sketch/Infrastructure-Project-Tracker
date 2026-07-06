@@ -264,6 +264,13 @@ select.csb{font-size:11px;padding:3px 7px;border:1px solid var(--border);border-
         </div>
         <div class="cbox" style="height:210px"><canvas id="c-main"></canvas></div>
         <div class="clegend" id="leg-main"></div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;" id="support-filters">
+          <span style="font-size:11px;color:#9ca3af;align-self:center;">Support Level:</span>
+          <button onclick="setSupportFilter('all')" id="sf-all" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;background:#374151;color:#fff;">All</button>
+          <button onclick="setSupportFilter('High')" id="sf-High" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;background:#fff;color:#374151;">High</button>
+          <button onclick="setSupportFilter('Medium')" id="sf-Medium" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;background:#fff;color:#374151;">Medium</button>
+          <button onclick="setSupportFilter('Low')" id="sf-Low" style="font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;background:#fff;color:#374151;">Low</button>
+        </div>
       </div>
 
       <div class="cc">
@@ -375,18 +382,18 @@ let P = [
   {id:6, code:'P250626B',   name:'Qiddiya Transport Hubs-NW',                       team:'BD 05',date:'',           status:'In-progress', stage:'IFC'},
   {id:7, code:'P250626E',   name:'Qiddiya Transport Hubs-SW',                       team:'BD 05',date:'',           status:'In-progress', stage:'IFC'},
   {id:8, code:'P250653',    name:'Hudayriyat West Sports Spine',                    team:'BD 04',date:'2026-06-30', status:'In-progress', stage:'IFC'},
-  {id:9, code:'P250660',    name:'DSP – MP Residential development',                team:'BD 03',date:'2026-06-30', status:'In-progress', stage:'IFC'},
+  {id:9, code:'P250660',    name:'DSP - MP Residential development',                team:'BD 03',date:'2026-06-30', status:'In-progress', stage:'IFC'},
   {id:10,code:'P250664',    name:'Discovery Towers',                                team:'-N/A', date:'',           status:'On Hold',     stage:'On Hold'},
   {id:11,code:'P250670',    name:'Azure (Jumeirah ASORA Bay)',                      team:'BD 02',date:'',           status:'In-progress', stage:'TIS'},
   {id:12,code:'P250672',    name:'DEC Campus legacy',                               team:'-N/A', date:'',           status:'Completed',   stage:'Completed'},
   {id:13,code:'P250673',    name:'Warner Bros Expansion P2',                        team:'BD 02',date:'',           status:'In-progress', stage:'TD'},
-  {id:14,code:'P250691-02', name:'City Walk Phase 3 – 3.02',                        team:'BD 04',date:'2026-04-23', status:'In-progress', stage:'IFC'},
-  {id:15,code:'P250691-03', name:'City Walk Phase 3 – 3.03',                        team:'BD 04',date:'2026-05-08', status:'In-progress', stage:'IFC'},
-  {id:16,code:'P250691-04', name:'City Walk Phase 3 – 3.04',                        team:'BD 04',date:'2026-11-24', status:'In-progress', stage:'100% SD'},
-  {id:17,code:'P250691-05', name:'City Walk Phase 3 – 3.05',                        team:'BD 04',date:'2026-11-25', status:'In-progress', stage:'100% SD'},
-  {id:18,code:'P250691-06', name:'City Walk Phase 3 – 3.06A',                       team:'-N/A', date:'2026-06-12', status:'Not Started', stage:'Not Started'},
-  {id:19,code:'P250691-10', name:'City Walk Phase 3 – 3.10',                        team:'BD 04',date:'2027-02-27', status:'In-progress', stage:'VO'},
-  {id:20,code:'P250691-11', name:'City Walk Phase 3 – 3.11',                        team:'-N/A', date:'2026-07-10', status:'Not Started', stage:'Not Started'},
+  {id:14,code:'P250691-02', name:'City Walk Phase 3 - 3.02',                        team:'BD 04',date:'2026-04-23', status:'In-progress', stage:'IFC'},
+  {id:15,code:'P250691-03', name:'City Walk Phase 3 - 3.03',                        team:'BD 04',date:'2026-05-08', status:'In-progress', stage:'IFC'},
+  {id:16,code:'P250691-04', name:'City Walk Phase 3 - 3.04',                        team:'BD 04',date:'2026-11-24', status:'In-progress', stage:'100% SD'},
+  {id:17,code:'P250691-05', name:'City Walk Phase 3 - 3.05',                        team:'BD 04',date:'2026-11-25', status:'In-progress', stage:'100% SD'},
+  {id:18,code:'P250691-06', name:'City Walk Phase 3 - 3.06A',                       team:'-N/A', date:'2026-06-12', status:'Not Started', stage:'Not Started'},
+  {id:19,code:'P250691-10', name:'City Walk Phase 3 - 3.10',                        team:'BD 04',date:'2027-02-27', status:'In-progress', stage:'VO'},
+  {id:20,code:'P250691-11', name:'City Walk Phase 3 - 3.11',                        team:'-N/A', date:'2026-07-10', status:'Not Started', stage:'Not Started'},
   {id:21,code:'P250694',    name:'DGII Boulevard NW (Proj 131)',                    team:'BD 05',date:'',           status:'In-progress', stage:'IFC'},
   {id:22,code:'P250695',    name:'DGII Boulevard NW (Proj 134)',                    team:'BD 05',date:'2026-12-20', status:'In-progress', stage:'50% SD'},
   {id:23,code:'P250696',    name:'DGII Boulevard NW (Proj 135)',                    team:'BD 05',date:'',           status:'In-progress', stage:'100% DD'},
@@ -398,21 +405,21 @@ let P = [
   {id:29,code:'P250721',    name:'Signature Tower',                                 team:'BD 01',date:'2026-12-30', status:'In-progress', stage:'100% SD'},
   {id:30,code:'P250722',    name:'Qididya Beach D15',                               team:'BD 01',date:'2026-11-19', status:'In-progress', stage:'50% DMP'},
   {id:31,code:'P250726',    name:'D3 Residence',                                    team:'BD 01',date:'2026-09-28', status:'In-progress', stage:'50% DD'},
-  {id:32,code:'P250728',    name:'Masdar City – Phase 1',                           team:'BD 02',date:'2026-12-18', status:'In-progress', stage:'100% DD'},
+  {id:32,code:'P250728',    name:'Masdar City - Phase 1',                           team:'BD 02',date:'2026-12-18', status:'In-progress', stage:'100% DD'},
   {id:33,code:'P250734',    name:'Central Plaza Hub (P1)',                           team:'BD 03',date:'',           status:'In-progress', stage:'100% CMP'},
   {id:34,code:'P250735',    name:'Central Plaza Hub (P2)',                           team:'BD 03',date:'',           status:'In-progress', stage:'100% CMP'},
   {id:35,code:'P250736',    name:'Marina Island (P3)',                              team:'BD 03',date:'',           status:'In-progress', stage:'100% CMP'},
-  {id:36,code:'P250743A',   name:'Ras El Hekma – Cliff Hotels',                    team:'BD 02',date:'',           status:'In-progress', stage:'100% SD'},
-  {id:37,code:'P250743B',   name:'Ras El Hekma – Residence Club',                  team:'BD 02',date:'',           status:'In-progress', stage:'50% SD'},
+  {id:36,code:'P250743A',   name:'Ras El Hekma - Cliff Hotels',                    team:'BD 02',date:'',           status:'In-progress', stage:'100% SD'},
+  {id:37,code:'P250743B',   name:'Ras El Hekma - Residence Club',                  team:'BD 02',date:'',           status:'In-progress', stage:'50% SD'},
   {id:38,code:'P250744',    name:'KSP',                                             team:'BD 01',date:'2026-11-30', status:'In-progress', stage:''},
   {id:39,code:'P250769',    name:'Hadaeq Villas',                                   team:'BD 04',date:'',           status:'In-progress', stage:'TIS'},
   {id:40,code:'P250788',    name:'Al Maryah Square',                                team:'-N/A', date:'',           status:'In-progress', stage:'100% CD'},
-  {id:41,code:'P250790',    name:'Humain – AI Data Centre Campus',                  team:'-N/A', date:'',           status:'Completed',   stage:'Completed'},
-  {id:42,code:'P250798',    name:'Ras El Hekma – Strategic Projects',               team:'-N/A', date:'2026-09-01', status:'In-progress', stage:'Peer Review'},
-  {id:43,code:'P250799',    name:'Ras El Hekma – Plots and Buildings',              team:'-N/A', date:'2026-09-01', status:'In-progress', stage:'Peer Review'},
-  {id:44,code:'P250800',    name:'Ras El Hekma – Masterplan (Wadi Yam)',            team:'-N/A', date:'',           status:'Completed',   stage:'Completed'},
+  {id:41,code:'P250790',    name:'Humain - AI Data Centre Campus',                  team:'-N/A', date:'',           status:'Completed',   stage:'Completed'},
+  {id:42,code:'P250798',    name:'Ras El Hekma - Strategic Projects',               team:'-N/A', date:'2026-09-01', status:'In-progress', stage:'Peer Review'},
+  {id:43,code:'P250799',    name:'Ras El Hekma - Plots and Buildings',              team:'-N/A', date:'2026-09-01', status:'In-progress', stage:'Peer Review'},
+  {id:44,code:'P250800',    name:'Ras El Hekma - Masterplan (Wadi Yam)',            team:'-N/A', date:'',           status:'Completed',   stage:'Completed'},
   {id:45,code:'P250801',    name:'Wadi Safar',                                      team:'BD 03',date:'2026-04-30', status:'In-progress', stage:'50% DMP'},
-  {id:46,code:'P250803',    name:'Ras El Hekma – Masterplan (M2/M4)',               team:'-N/A', date:'',           status:'In-progress', stage:'Peer Review'},
+  {id:46,code:'P250803',    name:'Ras El Hekma - Masterplan (M2/M4)',               team:'-N/A', date:'',           status:'In-progress', stage:'Peer Review'},
   {id:47,code:'P250809',    name:'Al Etihad Sport Club',                            team:'BD 03',date:'2026-06-10', status:'In-progress', stage:'100% CD'},
   {id:48,code:'P250812',    name:'BAYN Project Phase 2',                            team:'BD 02',date:'',           status:'In-progress', stage:'50% DMP'},
   {id:49,code:'P250813D',   name:'DIC Golf CMP',                                   team:'-N/A', date:'',           status:'In-progress', stage:'50% CMP'},
@@ -740,6 +747,23 @@ function renderAllCharts(){
   renderMainChart(); renderDeadlineChart(); renderStatusChart();
 }
 
+// ─ SUPPORT LEVEL FILTER ─
+let activeSupportFilter = 'all';
+function setSupportFilter(level){
+  activeSupportFilter = level;
+  // Update button styles
+  ['all','High','Medium','Low'].forEach(l => {
+    const btn = document.getElementById('sf-' + l);
+    if(!btn) return;
+    if(l === level){
+      btn.style.background = '#374151'; btn.style.color = '#fff';
+    } else {
+      btn.style.background = '#fff'; btn.style.color = '#374151';
+    }
+  });
+  renderMainChart();
+}
+
 // ─ MAIN CONFIGURABLE ─
 function renderMainChart(){
   dk('main');
@@ -764,7 +788,8 @@ function renderMainChart(){
   if(mode==='team'){
     const TO=['BD 01','BD 02','BD 03','BD 04','BD 05','-N/A'];
     const teams=TO.filter(t=>P.some(p=>p.team===t));
-    const stages=[...new Set(filtered.map(p=>p.stage).filter(Boolean))].sort();
+    const supportFiltered = activeSupportFilter === 'all' ? filtered : filtered.filter(p=>p.support===activeSupportFilter);
+    const stages=[...new Set(supportFiltered.map(p=>p.stage).filter(Boolean))].sort();
     const refVal=6;
     charts.main=new Chart(ctx,{
       type:'bar',
@@ -1201,6 +1226,7 @@ async function loadData(){
         submit:normalizeDate(v[4]||''),
         status:(v[5]||'').replace(/^"|"$/g,''),
         stage:(v[6]||'').replace(/^"|"$/g,''),
+        support:(v[7]||'').replace(/^"|"$/g,''),
       };
     }).filter(p=>p.code);
     P=loaded;
@@ -1212,8 +1238,8 @@ async function loadData(){
     init();
   }catch(err){
     await loadChartJS().catch(()=>{});
-    toast('⚠ Could not load sheet — showing cached data');
-    init(); // fall back to hardcoded data
+    toast('⚠ Could not load Google Sheet — please check the connection');
+    init();
   }finally{
     loading.style.display='none';
   }
