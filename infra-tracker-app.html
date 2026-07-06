@@ -749,6 +749,7 @@ function renderAllCharts(){
 
 // ─ SUPPORT LEVEL FILTER ─
 let activeSupportFilter = 'all';
+let currentSupportFiltered = [];
 function setSupportFilter(level){
   activeSupportFilter = level;
   // Update button styles
@@ -789,6 +790,7 @@ function renderMainChart(){
     const TO=['BD 01','BD 02','BD 03','BD 04','BD 05','-N/A'];
     const teams=TO.filter(t=>P.some(p=>p.team===t));
     const supportFiltered = activeSupportFilter === 'all' ? filtered : filtered.filter(p=>p.support===activeSupportFilter);
+    currentSupportFiltered = supportFiltered;
     const stages=[...new Set(supportFiltered.map(p=>p.stage).filter(Boolean))].sort();
     const refVal=6;
     charts.main=new Chart(ctx,{
@@ -816,7 +818,7 @@ function renderMainChart(){
               if(c.raw===0) return null;
               const team=teams[c.dataIndex];
               const stage=c.dataset.label;
-              const projs=supportFiltered.filter(p=>p.team===team&&p.stage===stage);
+              const projs=currentSupportFiltered.filter(p=>p.team===team&&p.stage===stage);
               return projs.map(p=>`  · ${p.name||p.code}`).join('\n');
             }
           }},
