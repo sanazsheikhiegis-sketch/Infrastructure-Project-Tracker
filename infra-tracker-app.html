@@ -581,7 +581,7 @@ function doSort(){
 // ══════════════════════════════════════════
 // RENDER TABLE
 // ══════════════════════════════════════════
-const fD=d=>d?new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'—';
+const fD=d=>{if(!d) return '—'; const dt=new Date(d); return isNaN(dt.getTime())?'—':dt.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});};
 const dC=d=>{if(!d)return'';const diff=(new Date(d)-TODAY)/86400000;return diff<0?'date-od':diff<21?'date-sn':''};
 const tC=t=>({'BD 01':'t-BD01','BD 02':'t-BD02','BD 03':'t-BD03','BD 04':'t-BD04','BD 05':'t-BD05','-N/A':'t-NA'}[t]||'t-NA');
 const sC=s=>'s-'+(s||'').replace(/\s+/g,'-');
@@ -1180,14 +1180,16 @@ function normalizeDate(d){
   if(!d) return '';
   // Already YYYY-MM-DD
   if(/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
-  // DD/MM/YYYY or M/D/YYYY or D/M/YYYY
+  // DD/MM/YYYY or MM/DD/YYYY
   if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(d)){
     const parts=d.split('/');
-    // Detect MM/DD/YYYY vs DD/MM/YYYY: if first part >12, it's day
     const a=parseInt(parts[0]),b=parseInt(parts[1]),yr=parts[2];
+    // If first part >12, must be day (DD/MM/YYYY)
     if(a>12) return `${yr}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-    // Assume DD/MM/YYYY (European/UK)
-    return `${yr}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+    // If second part >12, must be day (MM/DD/YYYY)
+    if(b>12) return `${yr}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
+    // Ambiguous - assume MM/DD/YYYY (Google Sheets US default)
+    return `${yr}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
   }
   // Try generic parse as fallback
   const p=new Date(d);
