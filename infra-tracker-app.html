@@ -810,8 +810,18 @@ function renderMainChart(){
         onClick:(e,els)=>{if(els.length)setFlt('team',teams[els[0].index]);},
         plugins:{
           legend:{display:false},
-          tooltip:{...TT,callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}`}},
+          tooltip:{...TT,callbacks:{
+            label:c=>c.raw>0?` ${c.dataset.label}: ${c.raw} project${c.raw>1?'s':''}`:null,
+            afterLabel:c=>{
+              if(c.raw===0) return null;
+              const team=teams[c.dataIndex];
+              const stage=c.dataset.label;
+              const projs=supportFiltered.filter(p=>p.team===team&&p.stage===stage);
+              return projs.map(p=>`  · ${p.name||p.code}`).join('\n');
+            }
+          }},
           refLine:{value:refVal,axis:'x',color:'#9ca3af'},
+
         },
         scales:{x:xScaleStacked, y:yScaleStacked},
       }
